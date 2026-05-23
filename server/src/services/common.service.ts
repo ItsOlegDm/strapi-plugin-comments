@@ -5,8 +5,9 @@ import { isProfane, replaceProfanities } from 'no-profanity';
 import sanitizeHtml from 'sanitize-html';
 import { Id, PathTo, PathValue, RelatedEntity, StrapiContext } from '../@types';
 import { CommentsPluginConfig } from '../config';
+import { APPROVAL_STATUS } from '../const';
 import { ContentTypesUUIDs } from '../content-types';
-import { getCommentRepository, getStoreRepository } from '../repositories';
+import { getCommentRepository, getReportCommentRepository, getStoreRepository } from '../repositories';
 import { getOrderBy } from '../repositories/utils';
 import { CONFIG_PARAMS } from '../utils/constants';
 import PluginError from '../utils/PluginError';
@@ -240,24 +241,24 @@ const commonService = ({ strapi }: StrapiContext) => ({
       entry.blockedThread && dropBlockedThreads
         ? []
         : await Promise.all(
-            children.data.map((child) =>
-              this.getCommentsChildren(
-                {
-                  filters,
-                  populate,
-                  sort,
-                  fields,
-                  isAdmin,
-                  omit,
-                  locale,
-                  limit,
-                },
-                child,
-                relatedEntity,
-                dropBlockedThreads
-              )
+          children.data.map((child) =>
+            this.getCommentsChildren(
+              {
+                filters,
+                populate,
+                sort,
+                fields,
+                isAdmin,
+                omit,
+                locale,
+                limit,
+              },
+              child,
+              relatedEntity,
+              dropBlockedThreads
             )
-          );
+          )
+        );
 
     return {
       ...entry,
@@ -354,6 +355,147 @@ const commonService = ({ strapi }: StrapiContext) => ({
     return getCommentRepository(strapi).update({ where: criteria, data });
   },
 
+  async changeBlockedComment(id: Id, forceStatus?: boolean) {
+    const entry = await this.findOne({ id });
+    return this.updateComment(
+      { id },
+      { blocked: !isNil(forceStatus) ? forceStatus : !entry.blocked },
+    );
+  },
+
+  async changeBlockedCommentThread(id: Id, forceStatus?: boolean) {
+    const entry = await this.findOne({ id });
+    const status = !isNil(forceStatus) ? forceStatus : !entry.blocked;
+    const updatedEntry = await this.updateComment(
+      { id },
+      { blocked: status, blockedThread: status },
+    );
+    await this.modifiedNestedNestedComments(id, 'blockedThread', status);
+    return this.sanitizeCommentEntity(updatedEntry, []);
+  },
+
+  async approveComment(id: Id) {
+    const entity = await getCommentRepository(strapi).update({
+      where: { id },
+      data: { approvalStatus: APPROVAL_STATUS.APPROVED },
+    });
+    if (!entity) {
+      throw new PluginError(404, 'Not found');
+    }
+    return this.sanitizeCommentEntity(entity, []);
+  },
+
+  async rejectComment(id: Id) {
+    const entity = await getCommentRepository(strapi).update({
+      where: { id },
+      data: { approvalStatus: APPROVAL_STATUS.REJECTED },
+    });
+    if (!entity) {
+      throw new PluginError(404, 'Not found');
+    }
+    return this.sanitizeCommentEntity(entity, []);
+  },
+
+  async resolveAbuseReport(commentId: Id, reportId: Id) {
+    return getReportCommentRepository(strapi).update({
+      where: {
+        id: reportId,
+        related: commentId,
+      },
+      data: {
+        resolved: true,
+      },
+    });
+  },
+
+  async resolveCommentMultipleAbuseReports(commentId: Id, reportIds: number[]) {
+    const reports = await getReportCommentRepository(strapi).findMany({
+      where: {
+        id: reportIds,
+        related: commentId,
+      },
+      populate: ['related'],
+    });
+
+    if (reports.length !== reportIds.length) {
+      throw new PluginError(
+        400,
+        'At least one of selected reports got invalid comment entity relation. Try again.',
+      );
+    }
+    return getReportCommentRepository(strapi).updateMany({
+      where: {
+        id: reportIds,
+      },
+      data: {
+        resolved: true,
+      },
+    });
+  },
+
+  async resolveAllAbuseReportsForComment(id: Id) {
+    if (!id) {
+      throw new PluginError(
+        400,
+        'There is something wrong with comment Id. Try again.',
+      );
+    }
+    const reports = await getReportCommentRepository(strapi).findMany({
+      where: {
+        related: id,
+        resolved: false,
+      },
+    });
+    if (reports.length === 0) {
+      return { count: 0 };
+    }
+    return getReportCommentRepository(strapi).updateMany({
+      where: {
+        id: { $in: reports.map(({ id }) => id) },
+      },
+      data: {
+        resolved: true,
+      },
+    });
+  },
+
+  async resolveAllAbuseReportsForThread(commentId: number) {
+    if (!commentId) {
+      throw new PluginError(
+        400,
+        'There is something wrong with comment Id. Try again.',
+      );
+    }
+    const commentsInThread = await getCommentRepository(strapi).findMany({
+      where: {
+        threadOf: commentId,
+      },
+    });
+    const relatedCommentIds = commentsInThread.map(({ id }) => id).concat([commentId]);
+    const reports = await getReportCommentRepository(strapi).findMany({
+      where: {
+        related: relatedCommentIds,
+        resolved: false,
+      },
+    });
+
+    if (reports.length === 0) {
+      return { count: 0 };
+    }
+
+    return getReportCommentRepository(strapi)
+      .updateManyByIds(reports.map(({ id }) => id), {
+        resolved: true,
+      });
+  },
+
+  async resolveMultipleAbuseReports(reportIds: number[]) {
+    return getReportCommentRepository(strapi)
+      .updateManyByIds(reportIds, {
+        resolved: true,
+      });
+  },
+
   // Find all for author
   async findAllPerAuthor(
     {
@@ -379,13 +521,13 @@ const commonService = ({ strapi }: StrapiContext) => ({
 
     const authorQuery = isStrapiAuthor
       ? {
-          authorUser: {
-            id: authorId,
-          },
-        }
+        authorUser: {
+          id: authorId,
+        },
+      }
       : {
-          authorId,
-        };
+        authorId,
+      };
 
     const response = await this.findAllFlat({
       filters: {
@@ -445,6 +587,7 @@ const commonService = ({ strapi }: StrapiContext) => ({
             .map((_) => ({
               ..._,
               uid: relatedUid,
+              id: typeof _.id === 'number' ? _.id : parseInt(_.id, 10),
             }))
         );
       })

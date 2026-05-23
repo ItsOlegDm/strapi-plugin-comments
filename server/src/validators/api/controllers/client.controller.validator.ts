@@ -3,6 +3,7 @@ import { CommentsPluginConfig } from '../../../config';
 import { APPROVAL_STATUS } from '../../../const';
 import { AUTHOR_TYPE, CONFIG_PARAMS } from '../../../utils/constants';
 import { ExtractRightEither } from '../../../utils/Either';
+import { isRecord } from '../../utils';
 import {
   AVAILABLE_OPERATORS,
   externalAuthorSchema,
@@ -249,4 +250,102 @@ export const removeCommentValidator = (enabledCollections: string[], payload: ob
 
 export type RemoveCommentValidatorSchema = ExtractRightEither<
   ReturnType<typeof removeCommentValidator>
+>;
+
+const getChangeBlockedCommentSchema = (enabledCollections: string[]) =>
+  z.object({
+    relation: getRelationValidator(enabledCollections),
+    commentId: z.union([z.string(), z.number()]),
+  });
+
+export const changeBlockedCommentValidator = (
+  enabledCollections: string[],
+  payload: object
+) => {
+  return validate(getChangeBlockedCommentSchema(enabledCollections).safeParse(payload));
+};
+
+export type ChangeBlockedCommentValidatorSchema = ExtractRightEither<
+  ReturnType<typeof changeBlockedCommentValidator>
+>;
+
+const getResolveAbuseReportSchema = (enabledCollections: string[]) =>
+  getRelationSchema(enabledCollections).merge(
+    getStringToNumberValidator({
+      commentId: AVAILABLE_OPERATORS.single,
+      reportId: AVAILABLE_OPERATORS.single,
+    })
+  );
+
+export const resolveAbuseReportValidator = (enabledCollections: string[], payload: object) => {
+  return validate(getResolveAbuseReportSchema(enabledCollections).safeParse(payload));
+};
+
+export type ResolveAbuseReportValidatorSchema = ExtractRightEither<
+  ReturnType<typeof resolveAbuseReportValidator>
+>;
+
+export const resolveCommentMultipleAbuseReportsValidator = (
+  enabledCollections: string[],
+  payload: object
+) => {
+  return validate(
+    getRelationSchema(enabledCollections)
+      .merge(
+        getStringToNumberValidator({
+          commentId: AVAILABLE_OPERATORS.single,
+          reportIds: AVAILABLE_OPERATORS.array,
+        })
+      )
+      .refine((data) => data.reportIds.length > 0, { message: 'reportIds must not be empty' })
+      .safeParse(payload)
+  );
+};
+
+/**
+ * Same merge pattern as admin `getCommentResolveMultipleAbuseReportsValidator`: spread the body,
+ * then set `relation` and `commentId` from the route so path always wins over the body.
+ */
+export const getCommentResolveMultipleAbuseReportsValidator = (
+  enabledCollections: string[],
+  params: { relation?: string; commentId?: string | number },
+  bodyRaw: unknown
+) => {
+  const body = isRecord(bodyRaw) ? bodyRaw : {};
+
+  return resolveCommentMultipleAbuseReportsValidator(enabledCollections, {
+    ...body,
+    relation: params.relation,
+    commentId: params.commentId,
+  });
+};
+
+export type ResolveCommentMultipleAbuseReportsValidatorSchema = ExtractRightEither<
+  ReturnType<typeof resolveCommentMultipleAbuseReportsValidator>
+>;
+
+export type ResolveAllAbuseReportsForCommentValidatorSchema = ChangeBlockedCommentValidatorSchema;
+export type ResolveAllAbuseReportsForThreadValidatorSchema = ChangeBlockedCommentValidatorSchema;
+
+export const resolveMultipleAbuseReportsValidator = (
+  enabledCollections: string[],
+  relation: string,
+  payload: object
+) => {
+  return validate(
+    z
+      .object({
+        relation: getRelationValidator(enabledCollections),
+      })
+      .merge(
+        z.object({
+          reportIds: z.array(stringToNumberValidator).min(1),
+        })
+      )
+      .safeParse({ ...payload, relation })
+  );
+};
+
+export type ResolveMultipleAbuseReportsValidatorSchema = ExtractRightEither<
+  ReturnType<typeof resolveMultipleAbuseReportsValidator>
 >;
