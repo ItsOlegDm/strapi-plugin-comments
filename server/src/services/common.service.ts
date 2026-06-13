@@ -8,7 +8,7 @@ import { CommentsPluginConfig } from '../config';
 import { APPROVAL_STATUS } from '../const';
 import { ContentTypesUUIDs } from '../content-types';
 import { getCommentRepository, getReportCommentRepository, getStoreRepository } from '../repositories';
-import { getOrderBy } from '../repositories/utils';
+import { getDefaultAuthorPopulate, getOrderBy } from '../repositories/utils';
 import { CONFIG_PARAMS } from '../utils/constants';
 import PluginError from '../utils/PluginError';
 import { client as clientValidator } from '../validators/api';
@@ -59,20 +59,18 @@ const commonService = ({ strapi }: StrapiContext) => ({
     entity: Comment | CommentWithRelated,
     blockedAuthors: string[],
     omitProps: Array<keyof Comment> = [],
-    populate: any = {}
   ): Comment {
-    const fieldsToPopulate = Array.isArray(populate) ? populate : Object.keys(populate || {});
     return filterItem(
       {
         ...buildAuthorModel(
           {
             ...entity,
             threadOf: isObject(entity.threadOf)
-              ? buildAuthorModel(entity.threadOf, blockedAuthors, fieldsToPopulate)
+              ? buildAuthorModel(entity.threadOf, blockedAuthors, strapi)
               : entity.threadOf,
           },
           blockedAuthors,
-          fieldsToPopulate
+          strapi,
         ),
       },
       omitProps
@@ -102,10 +100,7 @@ const commonService = ({ strapi }: StrapiContext) => ({
     const defaultSelect = (['id', 'related'] as const).filter((field) => !omit.includes(field));
 
     const populateClause: clientValidator.FindAllFlatSchema['populate'] = {
-      authorUser: {
-        populate: true,
-        avatar: { populate: true },
-      },
+      authorUser: getDefaultAuthorPopulate(strapi),
       ...(isObject(populate) ? populate : {}),
     };
     const doNotPopulateAuthor = isAdmin
@@ -164,14 +159,6 @@ const commonService = ({ strapi }: StrapiContext) => ({
             : filters.threadOf
           : null;
 
-      let authorUserPopulate = {};
-      if (isObject(populate?.authorUser)) {
-        authorUserPopulate =
-          'populate' in populate.authorUser
-            ? populate.authorUser.populate
-            : populateClause.authorUser;
-      }
-
       const primitiveThreadOf = typeof parsedThreadOf === 'number' ? parsedThreadOf : null;
 
       return this.sanitizeCommentEntity(
@@ -183,7 +170,6 @@ const commonService = ({ strapi }: StrapiContext) => ({
         },
         doNotPopulateAuthor,
         omit as Array<keyof Comment>,
-        authorUserPopulate
       );
     });
 
@@ -333,7 +319,7 @@ const commonService = ({ strapi }: StrapiContext) => ({
       where: criteria,
       populate: {
         reports: true,
-        authorUser: { populate: ['avatar'] },
+        authorUser: getDefaultAuthorPopulate(strapi),
       },
     });
     if (!entity) {

@@ -1,30 +1,10 @@
 import { StrapiUser } from '@sensinum/strapi-utils';
-import { get, isEmpty, isObject } from 'lodash';
-import { AdminUser, CommentAuthor, Id } from '../../@types';
+import { isEmpty } from 'lodash';
+import { AdminUser, CommentAuthor, CoreStrapi, Id } from '../../@types';
+import { getUserPrivateFields } from '../../repositories/utils';
 import { REGEX } from '../../utils/constants';
 import PluginError from '../../utils/error';
 import { Comment, CommentWithRelated } from '../../validators/repositories';
-
-type Avatar = {
-  url: string;
-  name: string;
-  hash: string;
-}
-
-interface StrapiAuthorUser {
-  id: Id;
-  username: string;
-  email: string;
-  avatar?: Avatar & {
-    formats: {
-      thumbnail?: Avatar;
-      small?: Avatar;
-      medium?: Avatar;
-      large?: Avatar;
-    }
-  };
-  [key: string]: unknown;
-}
 
 export const getRelatedGroups = (related: string): Array<string> =>
   related.split(REGEX.relatedUid).filter((s) => s && s.length > 0);
@@ -37,10 +17,36 @@ export const filterOurResolvedReports = (item: Comment): Comment =>
     }
     : item;
 
+export const buildPublicUserAuthor = (
+  user: Record<string, unknown>,
+  strapi: CoreStrapi,
+  blockedAuthorProps: string[] = [],
+): CommentAuthor => {
+  const excludedFields = new Set([
+    ...getUserPrivateFields(strapi),
+    ...blockedAuthorProps,
+  ]);
+
+  const publicUser = Object.fromEntries(
+    Object.entries(user).filter(([key]) => !excludedFields.has(key)),
+  ) as Record<string, unknown>;
+
+  const name = getAuthorName({
+    firstname: publicUser.firstname as string | undefined,
+    lastname: publicUser.lastname as string | undefined,
+    username: publicUser.username as string | undefined,
+  });
+
+  return {
+    ...publicUser,
+    ...(name ? { name } : {}),
+  } as CommentAuthor;
+};
+
 export const buildAuthorModel = (
   item: Comment | CommentWithRelated,
   blockedAuthorProps: Array<string>,
-  fieldsToPopulate: Array<string> = [],
+  strapi: CoreStrapi,
 ): Comment => {
   const {
     authorUser,
@@ -53,18 +59,10 @@ export const buildAuthorModel = (
   let author: CommentAuthor = {} as CommentAuthor;
 
   if (authorUser && typeof authorUser !== 'string') {
-    const user = authorUser as StrapiAuthorUser;
-    author = fieldsToPopulate.reduce(
-      (prev, curr) => ({
-        ...prev,
-        [curr]: user[curr],
-      }),
-      {
-        id: user.id,
-        name: user.username,
-        email: user.email,
-        avatar: user.avatar?.formats?.thumbnail.url || user.avatar?.url,
-      },
+    author = buildPublicUserAuthor(
+      authorUser as Record<string, unknown>,
+      strapi,
+      blockedAuthorProps,
     );
   } else if (authorId) {
     author = {
@@ -73,12 +71,13 @@ export const buildAuthorModel = (
       email: authorEmail,
       avatar: authorAvatar,
     };
-  }
 
-  author = isEmpty(author) ? author : Object.fromEntries(
-    Object.entries(author)
-          .filter(([name]) => !blockedAuthorProps.includes(name)),
-  ) as CommentAuthor;
+    author = isEmpty(author)
+      ? author
+      : (Object.fromEntries(
+        Object.entries(author).filter(([name]) => !blockedAuthorProps.includes(name)),
+      ) as CommentAuthor);
+  }
 
   return {
     ...rest,

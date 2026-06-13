@@ -471,22 +471,12 @@ describe('common.service', () => {
   });
 
   describe('sanitizeCommentEntity', () => {
-    it('should handle populate as an array', () => {
+    it('should build author model from entity data', () => {
       const strapi = getStrapi();
       const service = getService(strapi);
       const entity = { id: 1, content: 'Test', authorName: 'John' };
 
-      const result = service.sanitizeCommentEntity(entity, [], [], ['authorUser']);
-
-      expect(result).toBeDefined();
-      expect(result.id).toBe(1);
-    });
-    it('should handle populate as an object', () => {
-      const strapi = getStrapi();
-      const service = getService(strapi);
-      const entity = { id: 1, content: 'Test', authorName: 'John' };
-
-      const result = service.sanitizeCommentEntity(entity, [], [], { authorUser: true });
+      const result = service.sanitizeCommentEntity(entity, []);
 
       expect(result).toBeDefined();
       expect(result.id).toBe(1);

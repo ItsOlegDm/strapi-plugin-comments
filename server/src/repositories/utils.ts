@@ -1,23 +1,36 @@
 import { CoreStrapi } from '../@types';
 import { ContentTypesUUIDs, KeysContentTypes } from '../content-types';
 
+export const STRAPI_USER_UID = 'plugin::users-permissions.user';
+
+const POPULATABLE_USER_ATTRIBUTE_TYPES = ['media', 'relation', 'component', 'dynamiczone'] as const;
+
 export const getModelUid = (strapi: CoreStrapi, name: KeysContentTypes): ContentTypesUUIDs => {
   return strapi.plugin('comments').contentType(name)?.uid;
 };
 
-export const getDefaultAuthorPopulate = (strapi: CoreStrapi) => {
-  const strapiUserTypeUid = 'plugin::users-permissions.user';
-  const allowedTypes = ['media', 'relation'];
+export const getUserPrivateFields = (strapi: CoreStrapi): string[] => {
+  const { attributes = {} } = strapi.contentType(STRAPI_USER_UID) ?? {};
 
-  const { attributes } = strapi.contentType(strapiUserTypeUid) ?? { attributes: {} };
-  const relationTypes = Object.keys(attributes)?.filter((key: string) =>
-    allowedTypes.includes(attributes[key]?.type),
+  return Object.entries(attributes)
+    .filter(([, attribute]) => attribute?.private === true)
+    .map(([key]) => key);
+};
+
+export const getDefaultAuthorPopulate = (strapi: CoreStrapi) => {
+  const { attributes = {} } = strapi.contentType(STRAPI_USER_UID) ?? {};
+  const populate = Object.entries(attributes).reduce<Record<string, boolean>>(
+    (acc, [key, attribute]) => {
+      if (POPULATABLE_USER_ATTRIBUTE_TYPES.includes(attribute?.type)) {
+        acc[key] = true;
+      }
+      return acc;
+    },
+    {},
   );
 
-  if (relationTypes.includes('avatar')) {
-    return {
-      populate: { avatar: true },
-    };
+  if (Object.keys(populate).length > 0) {
+    return { populate };
   }
 
   return true;

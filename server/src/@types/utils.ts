@@ -48,7 +48,7 @@ export type CommentAuthor = {
   name?: string;
   email?: string;
   avatar?: string | object;
-};
+} & Record<string, unknown>;
 
 export type CommentAuthorPartial = {
   authorId?: Id;

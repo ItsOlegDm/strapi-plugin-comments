@@ -89,13 +89,10 @@ export default ({ strapi }: StrapiContext) => {
             [],
           ),
         };
-        const populate = typeof defaultAuthorUserPopulate !== 'boolean' ? defaultAuthorUserPopulate?.populate : {};
         return filterOurResolvedReports(
           commonService.sanitizeCommentEntity(
             entity,
             [],
-            [],
-            populate,
           ),
         );
       });
@@ -107,7 +104,6 @@ export default ({ strapi }: StrapiContext) => {
       };
     },
     async findOneAndThread({ id, removed, ...query }: adminValidator.FindOneValidatorSchema) {
-      const defaultAuthorUserPopulate = getDefaultAuthorPopulate(strapi);
       const defaultWhere = utils.findOneAndThread.getDefaultWhere(removed);
 
       const defaultPopulate: any = utils.findOneAndThread.getPopulate();
@@ -149,15 +145,12 @@ export default ({ strapi }: StrapiContext) => {
           false,
         );
 
-      const populate = typeof defaultAuthorUserPopulate !== 'boolean' ? defaultAuthorUserPopulate?.populate : {};
       const selectedEntity = this.getCommonService().sanitizeCommentEntity(
         {
           ...entity,
           threadOf: entity.threadOf || null,
         },
         [],
-        [],
-        populate,
       );
 
       return {

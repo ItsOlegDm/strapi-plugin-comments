@@ -1,5 +1,5 @@
 import { CoreStrapi } from '../../@types';
-import { getModelUid, getDefaultAuthorPopulate, getOrderBy } from '../utils';
+import { getModelUid, getDefaultAuthorPopulate, getOrderBy, getUserPrivateFields } from '../utils';
 import { caster } from '../../test/utils';
 
 describe('Utils', () => {
@@ -42,17 +42,19 @@ describe('Utils', () => {
       expect(result).toBe(true);
     });
 
-    it('should return populate object when avatar exists', () => {
+    it('should return populate object for all relation-like user attributes', () => {
       const strapi = caster<CoreStrapi>({
         contentType: jest.fn().mockReturnValue({
           attributes: {
-            avatar: { type: 'media' }
+            avatar: { type: 'media' },
+            role: { type: 'relation' },
+            username: { type: 'string' },
           }
         })
       });
 
       const result = getDefaultAuthorPopulate(strapi);
-      expect(result).toEqual({ populate: { avatar: true } });
+      expect(result).toEqual({ populate: { avatar: true, role: true } });
     });
 
     it('should return true when content type is not found', () => {
@@ -76,6 +78,22 @@ describe('Utils', () => {
 
       const result = getDefaultAuthorPopulate(strapi);
       expect(result).toBe(true);
+    });
+  });
+
+  describe('getUserPrivateFields', () => {
+    it('should return only private attribute names from the user schema', () => {
+      const strapi = caster<CoreStrapi>({
+        contentType: jest.fn().mockReturnValue({
+          attributes: {
+            username: { type: 'string' },
+            password: { type: 'password', private: true },
+            resetPasswordToken: { type: 'string', private: true },
+          },
+        }),
+      });
+
+      expect(getUserPrivateFields(strapi)).toEqual(['password', 'resetPasswordToken']);
     });
   });
 

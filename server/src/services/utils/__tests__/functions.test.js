@@ -3,9 +3,14 @@ const {
   getRelatedGroups,
   filterOurResolvedReports,
   buildAuthorModel,
+  buildPublicUserAuthor,
   getAuthorName,
   resolveUserContextError,
 } = require('../functions');
+
+const getMockStrapi = (attributes = {}) => ({
+  contentType: jest.fn().mockReturnValue({ attributes }),
+});
 
 describe('Test service functions utils', () => {
   describe('getRelatedGroups', () => {
@@ -36,32 +41,74 @@ describe('Test service functions utils', () => {
     });
   });
 
-  describe('buildAuthorModel', () => {
-    test('uses empty array fallback when fieldsToPopulate is not provided', () => {
-      const item = {
-        id: 1,
-        authorUser: {
+  describe('buildPublicUserAuthor', () => {
+    test('returns all public user fields and excludes private schema attributes', () => {
+      const strapi = getMockStrapi({
+        password: { type: 'password', private: true },
+        resetPasswordToken: { type: 'string', private: true },
+        username: { type: 'string' },
+        email: { type: 'email' },
+        bio: { type: 'text' },
+      });
+
+      const result = buildPublicUserAuthor(
+        {
+          id: 10,
+          username: 'john',
+          email: 'john@test.com',
+          bio: 'Hello world',
+          password: 'secret',
+          resetPasswordToken: 'token',
+        },
+        strapi,
+      );
+
+      expect(result).toMatchObject({
+        id: 10,
+        username: 'john',
+        email: 'john@test.com',
+        bio: 'Hello world',
+        name: 'john',
+      });
+      expect(result).not.toHaveProperty('password');
+      expect(result).not.toHaveProperty('resetPasswordToken');
+    });
+
+    test('applies blocked author props on top of private fields', () => {
+      const strapi = getMockStrapi({
+        username: { type: 'string' },
+        email: { type: 'email' },
+      });
+
+      const result = buildPublicUserAuthor(
+        {
           id: 10,
           username: 'john',
           email: 'john@test.com',
         },
-        content: 'test',
-      };
-      const result = buildAuthorModel(item, []);
-      expect(result.author).toMatchObject({
-        id: 10,
-        name: 'john',
-        email: 'john@test.com',
-      });
-    });
+        strapi,
+        ['email'],
+      );
 
-    test('uses avatar.formats.thumbnail.url when available', () => {
+      expect(result).toMatchObject({ id: 10, username: 'john', name: 'john' });
+      expect(result).not.toHaveProperty('email');
+    });
+  });
+
+  describe('buildAuthorModel', () => {
+    test('returns full public user object for Strapi authors', () => {
+      const strapi = getMockStrapi({
+        username: { type: 'string' },
+        email: { type: 'email' },
+        password: { type: 'password', private: true },
+      });
       const item = {
         id: 1,
         authorUser: {
           id: 10,
           username: 'john',
           email: 'john@test.com',
+          password: 'secret',
           avatar: {
             url: '/uploads/large.png',
             formats: {
@@ -71,48 +118,25 @@ describe('Test service functions utils', () => {
         },
         content: 'test',
       };
-      const result = buildAuthorModel(item, []);
-      expect(result.author.avatar).toBe('/uploads/thumbnail.png');
-    });
-
-    test('falls back to avatar.url when formats.thumbnail is not available', () => {
-      const item = {
-        id: 1,
-        authorUser: {
-          id: 10,
-          username: 'john',
-          email: 'john@test.com',
-          avatar: {
-            url: '/uploads/avatar.png',
-          },
-        },
-        content: 'test',
-      };
-      const result = buildAuthorModel(item, []);
-      expect(result.author.avatar).toBe('/uploads/avatar.png');
-    });
-
-    test('reduces authorUser with fieldsToPopulate', () => {
-      const item = {
-        id: 1,
-        authorUser: {
-          id: 10,
-          username: 'john',
-          email: 'john@test.com',
-          customField: 'custom',
-        },
-        content: 'test',
-      };
-      const result = buildAuthorModel(item, [], ['customField']);
+      const result = buildAuthorModel(item, [], strapi);
       expect(result.author).toMatchObject({
         id: 10,
-        name: 'john',
+        username: 'john',
         email: 'john@test.com',
-        customField: 'custom',
+        name: 'john',
+        avatar: {
+          url: '/uploads/large.png',
+          formats: {
+            thumbnail: { url: '/uploads/thumbnail.png' },
+          },
+        },
       });
+      expect(result.author).not.toHaveProperty('password');
+      expect(result).not.toHaveProperty('authorUser');
     });
 
-    test('filters blocked author props', () => {
+    test('filters blocked author props for generic authors', () => {
+      const strapi = getMockStrapi({});
       const item = {
         id: 1,
         authorId: 10,
@@ -121,7 +145,7 @@ describe('Test service functions utils', () => {
         authorAvatar: null,
         content: 'test',
       };
-      const result = buildAuthorModel(item, ['email'], []);
+      const result = buildAuthorModel(item, ['email'], strapi);
       expect(result.author).not.toHaveProperty('email');
       expect(result.author).toMatchObject({ id: 10, name: 'john' });
     });

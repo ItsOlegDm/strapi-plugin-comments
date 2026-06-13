@@ -2,6 +2,7 @@ import { isEmpty } from 'lodash';
 import { AdminUser, StrapiContext } from '../@types';
 import { APPROVAL_STATUS, CONFIG_PARAMS } from '../const';
 import { getCommentRepository, getReportCommentRepository } from '../repositories';
+import { getDefaultAuthorPopulate } from '../repositories/utils';
 import { isLeft, unwrapEither } from '../utils/Either';
 import PluginError from '../utils/error';
 import { getPluginService } from '../utils/getPluginService';
@@ -92,7 +93,7 @@ export const clientService = ({ strapi }: StrapiContext) => {
             : APPROVAL_STATUS.APPROVED,
         },
         populate: {
-          authorUser: { populate: ['avatar'] },
+          authorUser: getDefaultAuthorPopulate(strapi),
         },
       });
       const entity: Comment = {
@@ -123,7 +124,7 @@ export const clientService = ({ strapi }: StrapiContext) => {
           const entity = await getCommentRepository(strapi).update({
             where: { id: commentId },
             data: { content: await this.getCommonService().sanitizeCommentContent(content) },
-            populate: { threadOf: true, authorUser: { populate: ['avatar'] }, },
+            populate: { threadOf: true, authorUser: getDefaultAuthorPopulate(strapi), },
           });
           return this.getCommonService().sanitizeCommentEntity(entity, blockedAuthorProps);
         }
@@ -217,7 +218,7 @@ export const clientService = ({ strapi }: StrapiContext) => {
                 related: relation,
               },
               data: { removed: true },
-              populate: { threadOf: true, authorUser: { populate: ['avatar'] }, },
+              populate: { threadOf: true, authorUser: getDefaultAuthorPopulate(strapi), },
             });
 
           await this.markAsRemovedNested(commentId, true);
