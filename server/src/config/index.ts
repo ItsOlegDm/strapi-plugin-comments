@@ -16,6 +16,7 @@ const defaultPluginConfig: CommentsPluginConfig = {
     OTHER: REPORT_REASON.OTHER,
   },
   blockedAuthorProps: [],
+  sanitizeComments: true,
 };
 
 const reportReasonsSchema = z.object({
@@ -33,6 +34,7 @@ export const schemaConfig = z.object({
   [CONFIG_PARAMS.APPROVAL_FLOW]: z.array(z.string()),
   [CONFIG_PARAMS.ENTRY_LABEL]: z.record(z.array(z.string())),
   [CONFIG_PARAMS.BAD_WORDS]: z.boolean().optional(),
+  [CONFIG_PARAMS.SANITIZE_COMMENTS]: z.boolean().optional(),
   [CONFIG_PARAMS.AUTHOR_BLOCKED_PROPS]: z.array(z.string()),
   gql: z.object({
     auth: z.boolean().optional(),

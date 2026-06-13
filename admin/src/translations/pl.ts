@@ -155,6 +155,9 @@ export default {
   'page.settings.form.badWords.label': 'Filtrowanie nieodpowiednich słów',
   'page.settings.form.badWords.hint':
     'Jeśli jest włączone, każdy post / aktualizacja komentarza będzie sprawdzany pod kątem nieodpowiedniego języka',
+  'page.settings.form.sanitizeComments.label': 'Sanityzacja treści HTML',
+  'page.settings.form.sanitizeComments.hint':
+    'Jeśli włączone, HTML komentarzy jest oczyszczany przy tworzeniu/aktualizacji i w panelu admina. Wyłącz, aby zachować style, klasy i inne znaczniki.',
   'page.settings.form.gqlAuth.label': 'Autoryzacja zapytań GraphQL',
   'page.settings.form.gqlAuth.hint':
     'Jeśli jest włączone, zapytania i mutacje interfejsu API GraphQL mogą być wywoływane tylko przez uwierzytelnionych użytkowników Strapi. W przeciwnym razie API pozostaje otwarte.',

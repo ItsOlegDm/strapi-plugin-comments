@@ -130,36 +130,50 @@ describe('common.service', () => {
   });
 
   describe('sanitizeCommentContent', () => {
-    it('should return sanitized content preserving allowed HTML', () => {
+    it('should return sanitized content preserving allowed HTML', async () => {
       const strapi = getStrapi();
       const service = getService(strapi);
       const content = '<p>Hello <strong>world</strong></p>';
+      mockStoreRepository.getConfig.mockResolvedValue({ sanitizeComments: true });
 
-      const result = service.sanitizeCommentContent(content);
+      const result = await service.sanitizeCommentContent(content);
 
       expect(result).toBe('<p>Hello <strong>world</strong></p>');
     });
 
-    it('should strip script tags to prevent XSS', () => {
+    it('should strip script tags to prevent XSS', async () => {
       const strapi = getStrapi();
       const service = getService(strapi);
       const content = '<p>Safe</p><script>alert("xss")</script>';
+      mockStoreRepository.getConfig.mockResolvedValue({ sanitizeComments: true });
 
-      const result = service.sanitizeCommentContent(content);
+      const result = await service.sanitizeCommentContent(content);
 
       expect(result).not.toContain('<script>');
       expect(result).not.toContain('alert');
       expect(result).toContain('<p>Safe</p>');
     });
 
-    it('should strip event handlers from elements', () => {
+    it('should strip event handlers from elements', async () => {
       const strapi = getStrapi();
       const service = getService(strapi);
       const content = '<p onclick="alert(1)">Click me</p>';
+      mockStoreRepository.getConfig.mockResolvedValue({ sanitizeComments: true });
 
-      const result = service.sanitizeCommentContent(content);
+      const result = await service.sanitizeCommentContent(content);
 
       expect(result).not.toContain('onclick');
+    });
+
+    it('should return content unchanged when sanitization is disabled', async () => {
+      const strapi = getStrapi();
+      const service = getService(strapi);
+      const content = '<p style="color:red" onclick="alert(1)">Click me</p><script>alert("xss")</script>';
+      mockStoreRepository.getConfig.mockResolvedValue({ sanitizeComments: false });
+
+      const result = await service.sanitizeCommentContent(content);
+
+      expect(result).toBe(content);
     });
   });
 

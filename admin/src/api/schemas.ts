@@ -16,6 +16,7 @@ export const configSchema = z.object({
   moderatorRoles: z.array(z.string()),
   isGQLPluginEnabled: z.boolean(),
   badWords: z.boolean().nullable().optional(),
+  sanitizeComments: z.boolean().nullable().optional(),
   gql: z
     .object({
       auth: z.boolean().nullable(),

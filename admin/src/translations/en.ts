@@ -154,6 +154,9 @@ const en = {
   'page.settings.form.badWords.label': 'Bad words filtering',
   'page.settings.form.badWords.hint':
     'If enabled, every post / update of comment is going to be checked against bad wording',
+  'page.settings.form.sanitizeComments.label': 'HTML content sanitization',
+  'page.settings.form.sanitizeComments.hint':
+    'If enabled, comment HTML is sanitized on create/update and in the admin UI. Disable to preserve styles, classes, and other markup.',
   'page.settings.form.gqlAuth.label': 'GraphQL queries authorization',
   'page.settings.form.gqlAuth.hint':
     'If enabled, GraphQL API queries & mutations can be triggered only by Authenticated Strapi users. Otherwise API remains open.',

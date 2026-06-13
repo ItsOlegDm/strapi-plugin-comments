@@ -213,7 +213,7 @@ export default ({ strapi }: StrapiContext) => {
       }
       return getCommentRepository(strapi).create({
         data: {
-          content: this.getCommonService().sanitizeCommentContent(content),
+          content: await this.getCommonService().sanitizeCommentContent(content),
           threadOf: id,
           authorId: author.id,
           authorName: getAuthorName(author),
@@ -226,7 +226,7 @@ export default ({ strapi }: StrapiContext) => {
     async updateComment({ id, content }: adminValidator.UpdateCommentValidatorSchema) {
       const entity = await getCommentRepository(strapi).update({
         where: { id },
-        data: { content: this.getCommonService().sanitizeCommentContent(content) },
+        data: { content: await this.getCommonService().sanitizeCommentContent(content) },
       });
       if (!entity) {
         throw new PluginError(404, 'Not found');

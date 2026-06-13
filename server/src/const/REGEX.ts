@@ -12,6 +12,7 @@ export const CONFIG_PARAMS = {
   ENTRY_LABEL: 'entryLabel',
   MODERATOR_ROLES: 'moderatorRoles',
   BAD_WORDS: 'badWords',
+  SANITIZE_COMMENTS: 'sanitizeComments',
   AUTHOR_BLOCKED_PROPS: 'blockedAuthorProps',
 } as const;
 

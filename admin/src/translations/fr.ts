@@ -161,6 +161,9 @@ export default {
   'page.settings.form.badWords.label': 'Filtrage des gros mots',
   'page.settings.form.badWords.hint':
     'Si activé, chaque publication/mise à jour de commentaire sera vérifiée contre les gros mots',
+  'page.settings.form.sanitizeComments.label': 'Sanitisation du contenu HTML',
+  'page.settings.form.sanitizeComments.hint':
+    'Si activé, le HTML des commentaires est nettoyé à la création/mise à jour et dans l’interface admin. Désactivez pour conserver les styles, classes et autres balises.',
   'page.settings.form.gqlAuth.label': 'Autorisation des requêtes GraphQL',
   'page.settings.form.gqlAuth.hint':
     "Si activé, les requêtes et mutations de l'API GraphQL ne peuvent être déclenchées que par les utilisateurs Strapi authentifiés. Sinon, l'API reste ouverte.",

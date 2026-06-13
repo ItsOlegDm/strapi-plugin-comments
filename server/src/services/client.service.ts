@@ -85,7 +85,7 @@ export const clientService = ({ strapi }: StrapiContext) => {
           ...authorData,
           threadOf,
           locale,
-          content: this.getCommonService().sanitizeCommentContent(clearContent),
+          content: await this.getCommonService().sanitizeCommentContent(clearContent),
           related: relation,
           approvalStatus: isApprovalFlowEnabled
             ? APPROVAL_STATUS.PENDING
@@ -122,7 +122,7 @@ export const clientService = ({ strapi }: StrapiContext) => {
         if (existingComment && existingComment.author?.id?.toString() === authorId?.toString()) {
           const entity = await getCommentRepository(strapi).update({
             where: { id: commentId },
-            data: { content: this.getCommonService().sanitizeCommentContent(content) },
+            data: { content: await this.getCommonService().sanitizeCommentContent(content) },
             populate: { threadOf: true, authorUser: { populate: ['avatar'] }, },
           });
           return this.getCommonService().sanitizeCommentEntity(entity, blockedAuthorProps);

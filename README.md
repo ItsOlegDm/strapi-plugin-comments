@@ -141,6 +141,7 @@ module.exports = ({ env }) => ({
     enabled: true,
     config: {
       badWords: false,
+      sanitizeComments: false,
       moderatorRoles: ["Authenticated"],
       approvalFlow: ["api::page.page"],
       entryLabel: {
@@ -164,6 +165,7 @@ module.exports = ({ env }) => ({
 
 - `enabledCollections` - list of Collection and Single Types for which plugin should be enabled in format like `'api::<collection name>.<content type name>'`. By default it's empty and none comments are not enabled for any of type in Strapi.
 - `no-profanity` - Enabled support for [profanity filtering](https://www.npmjs.com/package/no-profanity). Can be turned off or altered using the [options reference](https://www.npmjs.com/package/no-profanity?activeTab=readme#options). Default value: `true`.
+- `sanitizeComments` - If enabled, comment HTML is sanitized on create/update (server-side) and in the admin UI. Set to `false` to preserve inline styles, CSS classes, and other markup. Default value: `true`.
 - `moderatorRoles` - Optional list of names of roles. Users with those roles will be notified by email when a new abuse report is created. This feature requires a built-in [Strapi email plugin](https://docs.strapi.io/dev-docs/plugins/email) configured.
 - `approvalFlow` - list of Content Types which are supporting approval flow. Values must be in format like `'api::<collection name>.<content type name>'`. For not included, posted comments are going to be immediately visible.
 - `entryLabel` - ordered list of property names per Content Type to generate related entity label. Keys must be in format like `'api::<collection name>.<content type name>'`. Default formatting set as `*`.

@@ -113,6 +113,9 @@ const Settings = () => {
     allCollections.some((ct) => ct.uid === uid)
   );
   const badWords = isNil(config.data.badWords) ? true : config.data?.badWords;
+  const sanitizeComments = isNil(config.data.sanitizeComments)
+    ? true
+    : config.data?.sanitizeComments;
   const gqlAuthEnabled = Boolean(config.data.gql?.auth || null);
   const moderatorRoles = config.data.moderatorRoles.filter((role: string) =>
     roles.data.filter((r) => r.code === role)
@@ -177,6 +180,7 @@ const Settings = () => {
               enabledCollections,
               moderatorRoles,
               badWords,
+              sanitizeComments,
               clientEmail,
               clientUrl,
               gqlAuthEnabled,
@@ -338,14 +342,33 @@ const Settings = () => {
                     <Grid.Item col={4} xs={12} alignItems="start">
                       <Field.Root
                         width="100%"
-                        hint={getMessage('page.settings.form.enabledCollections.hint')}
+                        hint={getMessage('page.settings.form.badWords.hint')}
                       >
-                        <Field.Label htmlFor="enabledCollections">
-                          {getMessage('page.settings.form.enabledCollections.label')}
+                        <Field.Label htmlFor="badWords">
+                          {getMessage('page.settings.form.badWords.label')}
                         </Field.Label>
                         <Toggle
                           name="badWords"
                           checked={values.badWords}
+                          onChange={onChange}
+                          onLabel={getMessage('components.toogle.enabled')}
+                          offLabel={getMessage('components.toogle.disabled')}
+                          width="100%"
+                        />
+                        <Field.Hint />
+                      </Field.Root>
+                    </Grid.Item>
+                    <Grid.Item col={4} xs={12} alignItems="start">
+                      <Field.Root
+                        width="100%"
+                        hint={getMessage('page.settings.form.sanitizeComments.hint')}
+                      >
+                        <Field.Label htmlFor="sanitizeComments">
+                          {getMessage('page.settings.form.sanitizeComments.label')}
+                        </Field.Label>
+                        <Toggle
+                          name="sanitizeComments"
+                          checked={values.sanitizeComments}
                           onChange={onChange}
                           onLabel={getMessage('components.toogle.enabled')}
                           offLabel={getMessage('components.toogle.disabled')}

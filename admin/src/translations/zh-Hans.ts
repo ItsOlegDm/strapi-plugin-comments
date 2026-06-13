@@ -146,6 +146,9 @@ export default {
   'page.settings.form.moderatorRoles.hint': '将由插件通知要执行的重要操作的角色',
   'page.settings.form.badWords.label': '不良词汇筛选',
   'page.settings.form.badWords.hint': '如果启用，则每次发布/更新评论时都会针对不良词汇进行检查',
+  'page.settings.form.sanitizeComments.label': 'HTML 内容清理',
+  'page.settings.form.sanitizeComments.hint':
+    '启用后，评论 HTML 在创建/更新时以及管理界面中会被清理。禁用以保留样式、类名和其他标记。',
   'page.settings.form.gqlAuth.label': 'GraphQL查询授权',
   'page.settings.form.gqlAuth.hint':
     '如果启用， GraphQL API queries 和 mutations 只能由经过身份验证的 Strapi 用户触发。否则 API 将保持打开状态。',

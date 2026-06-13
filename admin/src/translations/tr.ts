@@ -153,6 +153,9 @@ export default {
   'page.settings.form.badWords.label': 'Küfür filtreleme',
   'page.settings.form.badWords.hint':
     'Etkinleştirilirse tüm yorumlar ve yorum düzenlemeleri küfür filtresinden geçirilecek',
+  'page.settings.form.sanitizeComments.label': 'HTML içerik sanitizasyonu',
+  'page.settings.form.sanitizeComments.hint':
+    'Etkinleştirilirse yorum HTML’i oluşturma/güncelleme sırasında ve admin arayüzünde temizlenir. Stilleri, sınıfları ve diğer işaretlemeyi korumak için devre dışı bırakın.',
   'page.settings.form.gqlAuth.label': 'GraphQL Sorgu Yetkileri',
   'page.settings.form.gqlAuth.hint':
     'Etkinse, GraphQL API sorguları ve mutasyonları yalnızca kimliği doğrulanmış Strapi kullanıcıları tarafından tetiklenebilir. Aksi takdirde API açık kalır.',

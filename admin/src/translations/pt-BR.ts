@@ -128,6 +128,9 @@ export default {
   'page.settings.form.badWords.label': 'Filtragem de palavrões',
   'page.settings.form.badWords.hint':
     'Se ativado, todas as postagens/atualizações de comentários serão verificadas em relação a palavras impróprias',
+  'page.settings.form.sanitizeComments.label': 'Sanitização de conteúdo HTML',
+  'page.settings.form.sanitizeComments.hint':
+    'Se ativado, o HTML dos comentários é sanitizado na criação/atualização e na interface admin. Desative para preservar estilos, classes e outras marcações.',
   'page.settings.form.gqlAuth.label': 'GraphQL queries authorization',
   'page.settings.form.gqlAuth.hint':
     'Se ativado, as queries e mutations da API GraphQL podem ser acionadas apenas por usuários autenticados do Strapi. Caso contrário, a API permanece aberta.',

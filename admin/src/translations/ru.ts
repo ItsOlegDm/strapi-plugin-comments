@@ -153,6 +153,9 @@ export default {
   'page.settings.form.badWords.label': 'Фильтрация ругательств',
   'page.settings.form.badWords.hint':
     'Если включена, то каждый новый комментарий или его изменение, будет проверен на ругательства',
+  'page.settings.form.sanitizeComments.label': 'Санитизация HTML-содержимого',
+  'page.settings.form.sanitizeComments.hint':
+    'Если включено, HTML комментариев очищается при создании/обновлении и в админке. Отключите, чтобы сохранить стили, классы и другую разметку.',
   'page.settings.form.gqlAuth.label': 'Авторизация запросов GraphQL',
   'page.settings.form.gqlAuth.hint':
     'If enabled, GraphQL API queries & mutations can be triggered only by Authenticated Strapi users. Otherwise API remains open.',

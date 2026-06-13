@@ -673,7 +673,12 @@ const commonService = ({ strapi }: StrapiContext) => ({
     });
   },
 
-  sanitizeCommentContent(content: string) {
+  async sanitizeCommentContent(content: string) {
+    const sanitizeComments = await this.getConfig(CONFIG_PARAMS.SANITIZE_COMMENTS, true);
+    if (!sanitizeComments) {
+      return content;
+    }
+
     return sanitizeHtml(content, {
       allowedTags: [
         'p',
